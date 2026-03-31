@@ -73,5 +73,31 @@ const generateToken = (id) => {
   });
 };
 
+const updatePreferences = async (req, res) => {
+  try {
+    const { preferences } = req.body;
+
+    // récupérer user connecté
+    const user = await User.findById(req.user._id);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // mettre à jour
+    user.preferences = preferences;
+
+    const updatedUser = await user.save();
+
+    res.status(200).json({
+      message: "Preferences updated",
+      preferences: updatedUser.preferences
+    });
+
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 // ✅ EXPORT À LA FIN
-module.exports = { registerUser, loginUser };
+module.exports = { registerUser, loginUser, updatePreferences };
