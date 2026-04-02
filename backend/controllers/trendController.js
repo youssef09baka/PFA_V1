@@ -21,14 +21,21 @@ const getTrends = async (req, res) => {
       }
     ];
 
-    // 🔥 1. Ajouter score
+    // 🔥 score
     trends = trends.map(trend => ({
       ...trend,
       score: trend.popularity + trend.growth
     }));
 
-    // 🔥 2. Trier par score (du plus grand au plus petit)
+    // 🔥 tri
     trends.sort((a, b) => b.score - a.score);
+
+    // 🔥 IA SIMULÉE
+    trends = trends.map(trend => ({
+      ...trend,
+      analysis: `The trend "${trend.title}" is growing due to increased demand and online engagement.`,
+      idea: `Create content about "${trend.title}" targeting beginners and trending audiences.`
+    }));
 
     res.status(200).json(trends);
 
