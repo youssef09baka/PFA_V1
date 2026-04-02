@@ -1,6 +1,6 @@
 const getTrends = async (req, res) => {
   try {
-    const trends = [
+    let trends = [
       {
         title: "AI tools for students",
         popularity: 85,
@@ -20,6 +20,15 @@ const getTrends = async (req, res) => {
         source: "youtube"
       }
     ];
+
+    // 🔥 1. Ajouter score
+    trends = trends.map(trend => ({
+      ...trend,
+      score: trend.popularity + trend.growth
+    }));
+
+    // 🔥 2. Trier par score (du plus grand au plus petit)
+    trends.sort((a, b) => b.score - a.score);
 
     res.status(200).json(trends);
 
