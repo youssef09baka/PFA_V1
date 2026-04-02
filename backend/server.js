@@ -4,6 +4,7 @@ const cors = require("cors");
 const connectDB = require("./config/db");
 const { PORT } = require("./config/config");
 const userRoutes = require("./routes/userRoutes");
+const trendRoutes = require("./routes/trendRoutes");
 
 const app = express();
 
@@ -16,6 +17,8 @@ app.use(express.json());
 
 // 🔥 3. Routes
 app.use("/api/users", userRoutes);
+
+app.use("/api/trends", trendRoutes);
 
 // 🔥 4. Test route
 app.get("/", (req, res) => {
