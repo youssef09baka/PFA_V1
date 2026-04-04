@@ -1,29 +1,98 @@
 const { getRedditTrends } = require("./redditService");
 const { getGoogleTrends } = require("./googleTrendsService");
 
+// 🔥 cache simple (1 minute)
+let cache = {
+  data: null,
+  timestamp: 0,
+};
+
+const CACHE_DURATION = 60 * 1000; // 1 min
+
 const getRealTrends = async () => {
-  const reddit = await getRedditTrends();
-  const google = await getGoogleTrends();
+  try {
+    // 🔥 utiliser cache si dispo
+    if (cache.data && Date.now() - cache.timestamp < CACHE_DURATION) {
+      console.log("DATA: using cache");
+      return cache.data;
+    }
 
-  const filteredGoogle = google.filter(t => {
-    const title = t.title.toLowerCase();
-    return (
-      title.includes("ai") ||
-      title.includes("tech") ||
-      title.includes("business") ||
-      title.includes("startup")
-    );
-  });
+    let reddit = [];
+    let google = [];
 
-  const allTrends = [...reddit, ...filteredGoogle];
+    // 🔹 récupérer Reddit
+    try {
+      reddit = await getRedditTrends();
+    } catch (err) {
+      console.error("Reddit failed:", err.message);
+    }
 
-  return allTrends
-    .sort((a, b) => {
-      const scoreA = a.popularity * 0.7 + a.growth * 0.3;
-      const scoreB = b.popularity * 0.7 + b.growth * 0.3;
-      return scoreB - scoreA;
-    })
-    .slice(0, 10);
+    // 🔹 récupérer Google
+    try {
+      google = await getGoogleTrends();
+    } catch (err) {
+      console.error("Google failed:", err.message);
+    }
+
+    // 🔹 sécuriser données
+    if (!Array.isArray(reddit)) reddit = [];
+    if (!Array.isArray(google)) google = [];
+
+    // 🔹 filtrer Google (optionnel léger)
+    const filteredGoogle = google.filter((t) => {
+      const title = t.title?.toLowerCase() || "";
+      return (
+        title.includes("ai") ||
+        title.includes("tech") ||
+        title.includes("business") ||
+        title.includes("startup")
+      );
+    });
+
+    // 🔥 fusion
+    let trends = [...reddit, ...filteredGoogle];
+
+    // 🔥 fallback si vide
+    if (trends.length === 0) {
+      console.warn("DATA: no trends found, returning fallback");
+      return [
+        {
+          title: "AI tools for productivity",
+          popularity: 50,
+          growth: 10,
+          source: "fallback",
+          link: "",
+        },
+      ];
+    }
+
+    // 🔥 limiter résultats
+    trends = trends.slice(0, 15);
+
+    // 🔥 log
+    console.log("DATA: trends fetched:", trends.length);
+
+    // 🔥 sauvegarder cache
+    cache = {
+      data: trends,
+      timestamp: Date.now(),
+    };
+
+    return trends;
+  } catch (error) {
+    console.error("DATA ERROR:", error.message);
+
+    // 🔥 fallback global
+    return [
+      {
+        title: "AI market trends",
+        popularity: 40,
+        growth: 5,
+        source: "fallback",
+        link: "",
+      },
+    ];
+  }
 };
 
 module.exports = { getRealTrends };
