@@ -1,9 +1,4 @@
 const axios = require("axios");
-const {
-  cleanTitle,
-  isRelevant,
-  isGoodContent,
-} = require("./cleaner");
 
 const getRedditTrends = async () => {
   try {
@@ -17,34 +12,81 @@ const getRedditTrends = async () => {
     let allPosts = [];
 
     for (const url of urls) {
-      const response = await axios.get(url);
-      allPosts = allPosts.concat(response.data.data.children);
+      const res = await axios.get(url);
+      allPosts = allPosts.concat(res.data.data.children);
     }
 
     const trends = allPosts
       .map((post) => {
-        const data = post.data;
+        let title = post.data.title;
+        if (!title) return null;
 
-        const cleanedTitle = cleanTitle(data.title);
-        if (!cleanedTitle) return null;
+        // nettoyage
+        title = title
+          .replace(/\[.*?\]/g, "")
+          .replace(/[^a-zA-Z0-9\s]/g, "")
+          .trim()
+          .replace(/\s+/g, " ");
 
-        if (!isRelevant(cleanedTitle)) return null;
+        if (title.length < 25) return null;
 
-        if (!isGoodContent(cleanedTitle)) return null;
+        const lower = title.toLowerCase();
+
+        // 🔹 pertinence
+        if (
+          !["ai", "startup", "business", "tech"].some((k) =>
+            lower.includes(k)
+          )
+        )
+          return null;
+
+        // 🔹 suppression contenu toxique / inutile
+        const bad = [
+          "trump",
+          "bernie",
+          "politics",
+          "war",
+          "sexual",
+          "accused",
+          "lawsuit",
+          "kill",
+          "threat",
+          "loser",
+          "drama",
+          "gossip",
+          "share",
+          "ama",
+        ];
+
+        if (bad.some((b) => lower.includes(b))) return null;
+
+        // 🔹 éviter questions / discussions
+        if (title.includes("?")) return null;
+        if (lower.startsWith("what") || lower.startsWith("how")) return null;
 
         return {
-          title: cleanedTitle,
-          popularity: data.score,
-          growth: data.num_comments,
+          title,
+          popularity: post.data.score,
+          growth: post.data.num_comments,
           source: "reddit",
-          link: `https://reddit.com${data.permalink}`,
+          link: `https://reddit.com${post.data.permalink}`,
         };
       })
-      .filter(Boolean);
+      .filter(Boolean)
+
+      // 🔥 score intelligent
+      .sort((a, b) => {
+        const scoreA = a.popularity * 0.7 + a.growth * 0.3;
+        const scoreB = b.popularity * 0.7 + b.growth * 0.3;
+        return scoreB - scoreA;
+      })
+
+      // 🔥 top résultats uniquement
+      .slice(0, 8);
 
     return trends;
-  } catch (error) {
-    console.error("Reddit fetch error:", error.message);
+  } catch (err) {
+    console.error("Reddit error:", err.message);
     return [];
   }
 };

@@ -1,81 +1,60 @@
-// Cleaner ULTRA PRO
+// FINAL CLEANER — stable pour PFA
 
 const KEYWORDS = [
   "ai",
-  "artificial intelligence",
   "startup",
   "business",
-  "money",
-  "marketing",
   "tech",
   "saas",
   "automation",
-  "online",
 ];
 
-// mots à exclure
-const BAD_WORDS = [
+// contenu à supprimer
+const BAD_PATTERNS = [
   "accused",
   "sexual",
   "lawsuit",
   "politics",
-  "bernie",
-  "trump",
-  "democrat",
-  "republican",
   "war",
-  "crime",
   "kill",
-  "threat",
-  "slams",
-  "loser",
-  "drama",
-  "gossip",
-  "ama",
-  "help me",
-  "anyone else",
+  "help",
+  "anyone",
   "do you",
-  "question",
+  "how do",
+  "why",
+  "share",
+  "finally",
+  "my startup",
 ];
 
-// 🔹 Nettoyage
+// nettoyage simple
 const cleanTitle = (title) => {
   if (!title) return null;
 
-  let cleaned = title;
+  let t = title;
 
-  cleaned = cleaned.replace(/\[.*?\]/g, "");
-  cleaned = cleaned.replace(
-    /([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|\uD83E[\uDD00-\uDDFF])/g,
-    ""
-  );
+  t = t.replace(/\[.*?\]/g, "");
+  t = t.replace(/[^a-zA-Z0-9\s]/g, "");
+  t = t.trim().replace(/\s+/g, " ");
 
-  cleaned = cleaned.replace(/[^a-zA-Z0-9\s]/g, "");
-  cleaned = cleaned.trim().replace(/\s+/g, " ");
+  if (t.length < 25) return null;
 
-  if (cleaned.length < 20) return null;
-
-  return cleaned;
+  return t;
 };
 
-// 🔹 pertinence
+// vérifier pertinence
 const isRelevant = (title) => {
-  const lower = title.toLowerCase();
-  return KEYWORDS.some((k) => lower.includes(k));
+  const t = title.toLowerCase();
+  return KEYWORDS.some((k) => t.includes(k));
 };
 
-// 🔹 qualité stricte
+// filtrage qualité
 const isGoodContent = (title) => {
-  const lower = title.toLowerCase();
+  const t = title.toLowerCase();
 
-  // exclure contenu toxique / inutile
-  if (BAD_WORDS.some((bad) => lower.includes(bad))) return false;
+  if (BAD_PATTERNS.some((bad) => t.includes(bad))) return false;
 
-  // exclure questions
-  if (title.endsWith("?")) return false;
-
-  // exclure phrases faibles
-  if (lower.startsWith("how") || lower.startsWith("why")) return false;
+  if (title.includes("?")) return false;
 
   return true;
 };
