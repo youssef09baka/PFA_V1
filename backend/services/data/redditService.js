@@ -21,7 +21,7 @@ const getRedditTrends = async () => {
         let title = post.data.title;
         if (!title) return null;
 
-        // nettoyage
+        // CLEAN
         title = title
           .replace(/\[.*?\]/g, "")
           .replace(/[^a-zA-Z0-9\s]/g, "")
@@ -32,15 +32,14 @@ const getRedditTrends = async () => {
 
         const lower = title.toLowerCase();
 
-        // 🔹 pertinence
+        // KEYWORDS
         if (
           !["ai", "startup", "business", "tech"].some((k) =>
             lower.includes(k)
           )
-        )
-          return null;
+        ) return null;
 
-        // 🔹 suppression contenu toxique / inutile
+        // BAD CONTENT
         const bad = [
           "trump",
           "bernie",
@@ -60,9 +59,21 @@ const getRedditTrends = async () => {
 
         if (bad.some((b) => lower.includes(b))) return null;
 
-        // 🔹 éviter questions / discussions
-        if (title.includes("?")) return null;
-        if (lower.startsWith("what") || lower.startsWith("how")) return null;
+        // ULTRA CLEAN FINAL
+        if (
+          title.includes("?") ||
+          lower.startsWith("what") ||
+          lower.startsWith("how") ||
+          lower.startsWith("why") ||
+          lower.startsWith("anyone") ||
+          lower.startsWith("something") ||
+          lower.startsWith("people") ||
+          lower.startsWith("feels") ||
+          lower.startsWith("do you") ||
+          lower.startsWith("would you") ||
+          lower.includes("who") ||
+          lower.includes("i will")
+        ) return null;
 
         return {
           title,
@@ -73,16 +84,12 @@ const getRedditTrends = async () => {
         };
       })
       .filter(Boolean)
-
-      // 🔥 score intelligent
       .sort((a, b) => {
         const scoreA = a.popularity * 0.7 + a.growth * 0.3;
         const scoreB = b.popularity * 0.7 + b.growth * 0.3;
         return scoreB - scoreA;
       })
-
-      // 🔥 top résultats uniquement
-      .slice(0, 8);
+      .slice(0, 6);
 
     return trends;
   } catch (err) {
