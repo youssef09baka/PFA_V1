@@ -1,4 +1,10 @@
 const axios = require("axios");
+const {
+  cleanTitle,
+  isRelevant,
+  isGoodContent,
+  validateTrend,
+} = require("./cleaner");
 
 const getRedditTrends = async () => {
   try {
@@ -12,76 +18,27 @@ const getRedditTrends = async () => {
     let allPosts = [];
 
     for (const url of urls) {
-      const res = await axios.get(url);
+      const res = await axios.get(url, { timeout: 5000 });
       allPosts = allPosts.concat(res.data.data.children);
     }
 
     const trends = allPosts
       .map((post) => {
-        let title = post.data.title;
-        if (!title) return null;
+        let title = cleanTitle(post.data.title);
+        if (!title || title.length < 25) return null;
 
-        // CLEAN
-        title = title
-          .replace(/\[.*?\]/g, "")
-          .replace(/[^a-zA-Z0-9\s]/g, "")
-          .trim()
-          .replace(/\s+/g, " ");
+        if (!isRelevant(title)) return null;
+        if (!isGoodContent(title)) return null;
 
-        if (title.length < 25) return null;
-
-        const lower = title.toLowerCase();
-
-        // KEYWORDS
-        if (
-          !["ai", "startup", "business", "tech"].some((k) =>
-            lower.includes(k)
-          )
-        ) return null;
-
-        // BAD CONTENT
-        const bad = [
-          "trump",
-          "bernie",
-          "politics",
-          "war",
-          "sexual",
-          "accused",
-          "lawsuit",
-          "kill",
-          "threat",
-          "loser",
-          "drama",
-          "gossip",
-          "share",
-          "ama",
-        ];
-
-        if (bad.some((b) => lower.includes(b))) return null;
-
-        // ULTRA CLEAN FINAL
-        if (
-          title.includes("?") ||
-          lower.startsWith("what") ||
-          lower.startsWith("how") ||
-          lower.startsWith("why") ||
-          lower.startsWith("anyone") ||
-          lower.startsWith("something") ||
-          lower.startsWith("people") ||
-          lower.startsWith("feels") ||
-          lower.startsWith("do you") ||
-          lower.startsWith("would you") ||
-          lower.includes("who") ||
-          lower.includes("i will")
-        ) return null;
-
-        return {
+        const trend = {
           title,
-          popularity: post.data.score,
-          growth: post.data.num_comments,
+          popularity: post.data.score || 0,
+          growth: post.data.num_comments || 0,
           source: "reddit",
           link: `https://reddit.com${post.data.permalink}`,
         };
+
+        return validateTrend(trend) ? trend : null;
       })
       .filter(Boolean)
       .sort((a, b) => {

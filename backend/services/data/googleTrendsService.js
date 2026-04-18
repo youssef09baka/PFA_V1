@@ -1,5 +1,10 @@
 require("dotenv").config();
 const axios = require("axios");
+const {
+  cleanTitle,
+  isRelevant,
+  validateTrend,
+} = require("./cleaner");
 
 const API_KEY = process.env.SERPAPI_KEY;
 
@@ -13,20 +18,37 @@ const getGoogleTrends = async () => {
           geo: "US",
           api_key: API_KEY,
         },
+        timeout: 5000,
       }
     );
 
-    const rawTrends = response.data.trending_searches || [];
+    const raw = response.data.trending_searches || [];
 
-    return rawTrends.slice(0, 5).map((trend) => ({
-      title: trend.query,
-      popularity: Math.floor(Math.random() * 50000), // 🔥 plus faible que reddit
-      growth: Math.floor(Math.random() * 50),
-      source: "google",
-      link: "",
-    }));
+    return raw
+      .map((trend, index) => {
+        let title = cleanTitle(trend.query);
+        if (!title) return null;
+
+        if (!isRelevant(title)) return null;
+
+        // 🔥 score basé sur position (pas random)
+        const popularity = 10000 - index * 500;
+        const growth = 50 - index;
+
+        const data = {
+          title,
+          popularity,
+          growth,
+          source: "google",
+          link: "",
+        };
+
+        return validateTrend(data) ? data : null;
+      })
+      .filter(Boolean)
+      .slice(0, 5);
   } catch (error) {
-    console.error("Google Trends error:", error.response?.data || error.message);
+    console.error("Google Trends error:", error.message);
     return [];
   }
 };

@@ -1,5 +1,3 @@
-// FINAL CLEANER — stable pour PFA
-
 const KEYWORDS = [
   "ai",
   "startup",
@@ -9,7 +7,6 @@ const KEYWORDS = [
   "automation",
 ];
 
-// contenu à supprimer
 const BAD_PATTERNS = [
   "accused",
   "sexual",
@@ -25,38 +22,47 @@ const BAD_PATTERNS = [
   "share",
   "finally",
   "my startup",
+  "what",
+  "how",
+  "people",
+  "feels",
+  "would you",
 ];
 
-// nettoyage simple
 const cleanTitle = (title) => {
   if (!title) return null;
 
-  let t = title;
-
-  t = t.replace(/\[.*?\]/g, "");
-  t = t.replace(/[^a-zA-Z0-9\s]/g, "");
-  t = t.trim().replace(/\s+/g, " ");
-
-  if (t.length < 25) return null;
-
-  return t;
+  return title
+    .replace(/\[.*?\]/g, "")
+    .replace(/[^a-zA-Z0-9\s]/g, "")
+    .trim()
+    .replace(/\s+/g, " ");
 };
 
-// vérifier pertinence
 const isRelevant = (title) => {
-  const t = title.toLowerCase();
-  return KEYWORDS.some((k) => t.includes(k));
+  const lower = title.toLowerCase();
+  return KEYWORDS.some((k) => lower.includes(k));
 };
 
-// filtrage qualité
 const isGoodContent = (title) => {
-  const t = title.toLowerCase();
-
-  if (BAD_PATTERNS.some((bad) => t.includes(bad))) return false;
-
-  if (title.includes("?")) return false;
-
-  return true;
+  const lower = title.toLowerCase();
+  return !BAD_PATTERNS.some((p) => lower.includes(p));
 };
 
-module.exports = { cleanTitle, isRelevant, isGoodContent };
+const validateTrend = (trend) => {
+  return (
+    trend &&
+    typeof trend.title === "string" &&
+    typeof trend.popularity === "number" &&
+    typeof trend.growth === "number" &&
+    typeof trend.source === "string" &&
+    typeof trend.link === "string"
+  );
+};
+
+module.exports = {
+  cleanTitle,
+  isRelevant,
+  isGoodContent,
+  validateTrend,
+};
