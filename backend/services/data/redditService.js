@@ -22,8 +22,13 @@ const getRedditTrends = async () => {
       allPosts = allPosts.concat(res.data.data.children);
     }
 
+    const getScore = (t) => t.popularity * 0.7 + t.growth * 0.3;
+
     const trends = allPosts
       .map((post) => {
+        // 🔥 sécurité ajoutée
+        if (!post || !post.data) return null;
+
         let title = cleanTitle(post.data.title);
         if (!title || title.length < 25) return null;
 
@@ -41,11 +46,7 @@ const getRedditTrends = async () => {
         return validateTrend(trend) ? trend : null;
       })
       .filter(Boolean)
-      .sort((a, b) => {
-        const scoreA = a.popularity * 0.7 + a.growth * 0.3;
-        const scoreB = b.popularity * 0.7 + b.growth * 0.3;
-        return scoreB - scoreA;
-      })
+      .sort((a, b) => getScore(b) - getScore(a)) // 🔥 plus propre
       .slice(0, 6);
 
     return trends;

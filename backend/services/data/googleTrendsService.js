@@ -26,14 +26,17 @@ const getGoogleTrends = async () => {
 
     return raw
       .map((trend, index) => {
+        // 🔥 sécurité
+        if (!trend || !trend.query) return null;
+
         let title = cleanTitle(trend.query);
         if (!title) return null;
 
         if (!isRelevant(title)) return null;
 
-        // 🔥 score basé sur position (pas random)
-        const popularity = 10000 - index * 500;
-        const growth = 50 - index;
+        // 🔥 score sécurisé (jamais négatif)
+        const popularity = Math.max(10000 - index * 500, 100);
+        const growth = Math.max(50 - index, 5);
 
         const data = {
           title,

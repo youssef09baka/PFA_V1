@@ -40,11 +40,13 @@ const cleanTitle = (title) => {
 };
 
 const isRelevant = (title) => {
+  if (!title) return false; // 🔥 sécurité ajoutée
   const lower = title.toLowerCase();
   return KEYWORDS.some((k) => lower.includes(k));
 };
 
 const isGoodContent = (title) => {
+  if (!title) return false; // 🔥 sécurité ajoutée
   const lower = title.toLowerCase();
   return !BAD_PATTERNS.some((p) => lower.includes(p));
 };

@@ -1,5 +1,6 @@
 const { getRedditTrends } = require("./redditService");
 const { getGoogleTrends } = require("./googleTrendsService");
+const { isRelevant } = require("./cleaner"); // 🔥 ajout
 
 // 🔥 cache simple (1 minute)
 let cache = {
@@ -38,16 +39,8 @@ const getRealTrends = async () => {
     if (!Array.isArray(reddit)) reddit = [];
     if (!Array.isArray(google)) google = [];
 
-    // 🔹 filtrer Google (optionnel léger)
-    const filteredGoogle = google.filter((t) => {
-      const title = t.title?.toLowerCase() || "";
-      return (
-        title.includes("ai") ||
-        title.includes("tech") ||
-        title.includes("business") ||
-        title.includes("startup")
-      );
-    });
+    // 🔥 utiliser cleaner (plus propre)
+    const filteredGoogle = google.filter((t) => isRelevant(t.title));
 
     // 🔥 fusion
     let trends = [...reddit, ...filteredGoogle];
