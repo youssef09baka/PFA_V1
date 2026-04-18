@@ -1,27 +1,10 @@
 const { generateAnalysis } = require("../services/aiService");
+const { getRealTrends } = require("../services/data");
 
 const getTrends = async (req, res) => {
   try {
-    let trends = [
-      {
-        title: "AI tools for students",
-        popularity: 85,
-        growth: 20,
-        source: "reddit"
-      },
-      {
-        title: "Fitness at home",
-        popularity: 70,
-        growth: 15,
-        source: "google trends"
-      },
-      {
-        title: "Online business ideas 2026",
-        popularity: 90,
-        growth: 25,
-        source: "youtube"
-      }
-    ];
+    // 🔥 DATA RÉELLE
+    let trends = await getRealTrends();
 
     // 🔥 1. score
     trends = trends.map(trend => ({
@@ -32,7 +15,7 @@ const getTrends = async (req, res) => {
     // 🔥 2. tri
     trends.sort((a, b) => b.score - a.score);
 
-    // 🔥 3. IA RÉELLE (IMPORTANT)
+    // 🔥 3. IA
     for (let trend of trends) {
       const aiResponse = await generateAnalysis(trend);
 
@@ -43,6 +26,7 @@ const getTrends = async (req, res) => {
     res.status(200).json(trends);
 
   } catch (error) {
+    console.error("Trend error:", error.message);
     res.status(500).json({ message: error.message });
   }
 };
