@@ -3,6 +3,11 @@ const axios = require("axios");
 // 🔥 ancienne version (utile en fallback)
 const generateAnalysis = async (trend) => {
   try {
+    // 🔥 sécurité
+    if (!trend || !trend.title) {
+      return "No trend data available";
+    }
+
     const response = await axios.post(
       "https://openrouter.ai/api/v1/chat/completions",
       {
@@ -18,11 +23,12 @@ const generateAnalysis = async (trend) => {
         headers: {
           Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
           "Content-Type": "application/json"
-        }
+        },
+        timeout: 7000 // 🔥 ajout
       }
     );
 
-    return response.data.choices[0].message.content;
+    return response.data?.choices?.[0]?.message?.content || "No AI response";
 
   } catch (error) {
     console.error("AI ERROR:", error.response?.data || error.message);

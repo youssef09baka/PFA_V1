@@ -1,41 +1,40 @@
 const { generateBatchAnalysis } = require("../services/aiService");
+const { getRealTrends } = require("../services/data");
 
 const getTrends = async (req, res) => {
   try {
-    let trends = [
-      {
-        title: "AI tools for students",
-        popularity: 85,
-        growth: 20,
-        source: "reddit"
-      },
-      {
-        title: "Fitness at home",
-        popularity: 70,
-        growth: 15,
-        source: "google trends"
-      },
-      {
-        title: "Online business ideas 2026",
-        popularity: 90,
-        growth: 25,
-        source: "youtube"
-      }
-    ];
+    // 🔥 1. DATA RÉELLE
+    let trends = await getRealTrends();
+
+    // 🔥 sécurité
+    if (!Array.isArray(trends)) trends = [];
+
+    // 🔥 fallback
+    if (trends.length === 0) {
+      trends = [
+        {
+          title: "AI tools for productivity",
+          popularity: 50,
+          growth: 10,
+          source: "fallback",
+          link: ""
+        }
+      ];
+    }
 
     // 🔥 limiter (important pour IA)
     trends = trends.slice(0, 5);
 
-    // 🔥 1. score
+    // 🔥 scoring UNIFIÉ
     trends = trends.map(trend => ({
       ...trend,
-      score: trend.popularity + trend.growth
+      score: trend.popularity * 0.7 + trend.growth * 0.3
     }));
 
-    // 🔥 2. tri
+    // 🔥 tri
     trends.sort((a, b) => b.score - a.score);
 
-    // 🔥 3. IA OPTIMISÉE (1 seul appel)
+    // 🔥 IA OPTIMISÉE (batch = rapide)
     trends = await generateBatchAnalysis(trends);
 
     res.status(200).json(trends);
