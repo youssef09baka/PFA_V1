@@ -6,11 +6,15 @@ const getTrends = async (req, res) => {
     // 🔥 1. DATA RÉELLE
     let trends = await getRealTrends();
 
-    // 🔥 sécurité
-    if (!Array.isArray(trends)) trends = [];
+    // 🔥 2. sécurité format
+    if (!Array.isArray(trends)) {
+      console.warn("DATA: invalid format");
+      trends = [];
+    }
 
-    // 🔥 fallback
+    // 🔥 3. fallback si vide
     if (trends.length === 0) {
+      console.warn("DATA: empty, using fallback");
       trends = [
         {
           title: "AI tools for productivity",
@@ -22,26 +26,44 @@ const getTrends = async (req, res) => {
       ];
     }
 
-    // 🔥 limiter (important pour IA)
+    // 🔥 4. validation + nettoyage
+    trends = trends
+      .filter(t =>
+        t &&
+        typeof t.title === "string" &&
+        typeof t.popularity === "number" &&
+        typeof t.growth === "number"
+      )
+      .map(t => ({
+        ...t,
+        title: t.title.replace(/\s+/g, " ").trim() // clean titre
+      }));
+
+    // 🔥 5. limiter (perf IA)
     trends = trends.slice(0, 5);
 
-    // 🔥 scoring UNIFIÉ
+    // 🔥 6. scoring UNIFIÉ (propre)
     trends = trends.map(trend => ({
       ...trend,
-      score: trend.popularity * 0.7 + trend.growth * 0.3
+      score: Math.round(trend.popularity * 0.7 + trend.growth * 0.3)
     }));
 
-    // 🔥 tri
+    // 🔥 7. tri
     trends.sort((a, b) => b.score - a.score);
 
-    // 🔥 IA OPTIMISÉE (batch = rapide)
+    // 🔥 8. logs utiles (debug / soutenance)
+    console.log("TRENDS COUNT:", trends.length);
+    console.log("TOP TREND:", trends[0]?.title);
+
+    // 🔥 9. IA (batch optimisé)
     trends = await generateBatchAnalysis(trends);
 
+    // 🔥 10. réponse finale
     res.status(200).json(trends);
 
   } catch (error) {
     console.error("TRENDS ERROR:", error.message);
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: "Server error" });
   }
 };
 

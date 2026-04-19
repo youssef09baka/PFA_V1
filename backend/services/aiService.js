@@ -39,26 +39,35 @@ const generateAnalysis = async (trend) => {
 // 🔥 VERSION OPTIMISÉE (BATCH)
 const generateBatchAnalysis = async (trends) => {
   try {
-    const titles = trends.map((t, i) => `${i + 1}. ${t.title}`).join("\n");
-
-    const prompt = `
-Return ONLY valid JSON.
-
-Format:
-[
- { "analysis": "...", "idea": "..." }
-]
-
-Trends:
-${titles}
-`;
+    // 🔥 construire prompt propre
+    const prompt = trends.map((t, i) => 
+      `${i + 1}. ${t.title}`
+    ).join("\n");
 
     const response = await axios.post(
       "https://openrouter.ai/api/v1/chat/completions",
       {
         model: "openai/gpt-3.5-turbo",
-        messages: [{ role: "user", content: prompt }],
-        temperature: 0.7
+        messages: [
+          {
+            role: "user",
+            content: `
+For each trend below, return:
+Analysis: why it is trending
+Idea: one content or business idea
+
+Format STRICT:
+1. Analysis: ...
+   Idea: ...
+
+2. Analysis: ...
+   Idea: ...
+
+Trends:
+${prompt}
+            `
+          }
+        ]
       },
       {
         headers: {
@@ -70,24 +79,31 @@ ${titles}
 
     const text = response.data.choices[0].message.content;
 
-    console.log("AI RAW:", text);
+    // 🔥 SPLIT intelligent
+    const parts = text.split(/\d+\.\s+/).filter(Boolean);
 
-    // 🔥 extraire JSON même si l’IA ajoute du texte
-    const jsonMatch = text.match(/\[[\s\S]*\]/);
+    return trends.map((trend, index) => {
+      const part = parts[index] || "";
 
-    if (!jsonMatch) throw new Error("No JSON found");
+      const analysisMatch = part.match(/Analysis:\s*(.*)/i);
+      const ideaMatch = part.match(/Idea:\s*(.*)/i);
 
-    const parsed = JSON.parse(jsonMatch[0]);
-
-    return trends.map((trend, i) => ({
-      ...trend,
-      analysis: parsed[i]?.analysis || "No analysis",
-      idea: parsed[i]?.idea || "No idea"
-    }));
+      return {
+        ...trend,
+        analysis: analysisMatch ? analysisMatch[1].trim() : "AI unavailable",
+        idea: ideaMatch ? ideaMatch[1].trim() : "No idea available"
+      };
+    });
 
   } catch (error) {
-    console.error("AI BATCH ERROR:", error.message);
-    return trends;
+    console.error("BATCH AI ERROR:", error.response?.data || error.message);
+
+    // 🔥 fallback propre
+    return trends.map(trend => ({
+      ...trend,
+      analysis: "AI unavailable",
+      idea: "No idea available"
+    }));
   }
 };
 
